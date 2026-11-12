@@ -1,6 +1,6 @@
 ---
 name: plan-together
-description: Plan with the user before acting and work in small steps. Use at the start of EVERY request that involves doing work (editing or creating files, running commands, git/push, installing, launching agents or delegating, multi-step tasks), and again before each next chunk. Skip only for pure questions or tiny read-only lookups.
+description: Plan with the user before acting and work in small steps. Use at the start of EVERY request that involves doing work (editing or creating files, running commands, git/push, installing, launching agents or delegating, multi-step tasks), and again before each next chunk. The user can switch to autonomous mode ("run on your own", "I'm going to sleep"). Skip only for pure questions or tiny read-only lookups.
 ---
 
 # Plan together, then go small
@@ -32,3 +32,18 @@ destructive or hard-to-undo actions, things that cost money or send data out, mi
 Everything else (edits, commands that change state, installs, git commit/push, launching agents) waits for the go-ahead.
 If the user answers with edits to the plan, restate the changed plan in one line before proceeding.
 If they say to go ahead on everything for a clearly bounded task, you may do that chunk without stopping per step, but still report at the end.
+
+## Autonomous mode (user opt-in, per task)
+
+The user can lift the step-by-step approval, e.g. "run it on your own", "I'm going to sleep", "just do it".
+This is more liberty, not free running:
+1. **Ask first, every time.** Never assume it. Confirm in the plan: the one task, the steps you will do, and its limits.
+   Wait for a clear yes. A past yes does not carry over to the next task.
+2. **Only that task.** Do the agreed steps without asking between them, then stop. Do not start follow-ups, extra
+   fixes or new ideas; list them at the end as suggestions.
+3. **Limits are agreed in the plan.** Anything hard to undo or outward-facing (push, delete, spending quota or money,
+   sending data out, touching other projects) is only done if the user approved that exact action in the plan;
+   otherwise skip it and report it. If something unexpected or risky comes up, stop and wait rather than improvise.
+4. **Keep it followable.** Use `task-progress` so progress is visible, commit in small steps, and finish with a short
+   report: done, skipped, problems, suggested next steps.
+5. **It ends with the task.** Back to planning together and small chunks afterwards, unless the user says otherwise.
