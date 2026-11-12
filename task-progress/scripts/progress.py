@@ -106,7 +106,54 @@ def cmd_watch(a):
     except KeyboardInterrupt: pass
     finally: sys.stdout.write("\033[?25h\033[?1049l"); sys.stdout.flush()
 
+# ---------- herdr ----------
+MOD_SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "herdr")
+
+def herdr_home():
+    return os.environ.get("HERDR_APP_HOME") or os.path.expanduser("~/.config/herdr-app")
+
+def herdr_do(cmd, args):
+    r = subprocess.run(["herdr-app", "do", cmd, json.dumps(args)], capture_output=True, text=True, timeout=15)
+    out = json.loads(r.stdout or "{}")
+    if r.returncode or "error" in out: raise RuntimeError(out.get("error") or r.stderr.strip())
+    return out
+
+def install_mod():
+    """Copy herdr/ into the Herdr app's mods/task-progress when it changed (herdr hot-reloads it)."""
+    dst = os.path.join(herdr_home(), "mods", "task-progress"); os.makedirs(dst, exist_ok=True)
+    for name in os.listdir(MOD_SRC):
+        src, out = os.path.join(MOD_SRC, name), os.path.join(dst, name)
+        with open(src, "rb") as fh: new = fh.read()
+        try:
+            with open(out, "rb") as fh:
+                if fh.read() == new: continue
+        except OSError: pass
+        with open(out, "wb") as fh: fh.write(new)
+
+def open_in_herdr(f):
+    """Split the calling agent's pane with the task-progress mod. Returns False if not in herdr."""
+    term = os.environ.get("HC_TERMINAL_ID")
+    if not term or not shutil.which("herdr-app") or not os.path.isdir(MOD_SRC): return False
+    try:
+        install_mod()
+        ls = json.loads(subprocess.run(["herdr-app", "ls"], capture_output=True, text=True, timeout=15).stdout)
+        pane = next((t["pane"] for s in ls["spaces"] for tab in s["tabs"] for t in tab["terminals"]
+                     if t["terminal"] == term and t.get("pane")), None)
+        args = {"direction": os.environ.get("TASK_PROGRESS_SPLIT", "down"), "mod": "task-progress", "props": {"file": f}}
+        if pane: args["pane"] = pane
+        new = herdr_do("pane.split", args).get("pane")
+        if new:
+            d = load(f); d["pane"] = new; save(f, d)
+        if pane:  # give the keyboard back to the agent's terminal
+            try: herdr_do("pane.focus", {"pane": pane})
+            except Exception: pass
+        print(f"opened in herdr pane {new or '(new)'}"); return True
+    except Exception as e:
+        print(f"herdr pane failed ({e}); falling back to a terminal window", file=sys.stderr); return False
+
 def cmd_open(a):
+    f = os.path.abspath(a.file)
+    if not a.window and open_in_herdr(f): return
     me = os.path.abspath(__file__); inner = f"python3 {shlex.quote(me)} watch {shlex.quote(os.path.abspath(a.file))}"
     for term, args in (("gnome-terminal", ["--title=Task progress", "--geometry=84x16", "--", "bash", "-c", inner]),
                        ("kitty", ["bash", "-c", inner]), ("alacritty", ["-e", "bash", "-c", inner]),
@@ -122,7 +169,8 @@ def cmd_demo(a):
 import subprocess, time
 P = ["python3", {me!r}]
 def s(*x): subprocess.run(P + list(x))
-s("init", {f!r}, "--title", "Rebuilding the indicator dataset", "--desc", "Demo: simulated long-running task")
+s("set", {f!r}, "--step", "Connecting to the data server (unknown duration)"); time.sleep(3)
+s("set", {f!r}, "--log", "Connected")
 steps = [("Downloading raw data", 0, 25, ["Fetched 12 tiles", "Fetched 48 tiles", "Download complete"]),
          ("Reprojecting rasters", 25, 55, ["Reprojected EPSG:4326 → 32198", "Clipped to study area"]),
          ("Computing indicators", 55, 90, ["Habitat destruction: ok", "Carbon sink: ok", "Connectivity: ok"]),
@@ -134,6 +182,9 @@ for name, a, b, logs in steps:
         if i % 4 == 0 and logs: s("set", {f!r}, "--log", logs.pop(0))
 s("done", {f!r}, "--msg", "All 9 indicators rebuilt")
 '''
+    cmd_init(argparse.Namespace(file=f, title="Rebuilding the indicator dataset", desc="Demo: simulated long-running task"))
+    if open_in_herdr(f):  # live view in a herdr pane; run the fake task here
+        subprocess.run([sys.executable, "-c", script]); print("demo finished:", f); return
     subprocess.Popen([sys.executable, "-c", script]); a.file = f; cmd_watch(a)
 
 p = argparse.ArgumentParser(); sub = p.add_subparsers(dest="cmd", required=True)
@@ -144,6 +195,7 @@ for name in ("init", "set", "done", "fail", "watch", "open"):
         sp.add_argument("--percent", type=float); sp.add_argument("--step"); sp.add_argument("--log")
         sp.add_argument("--title"); sp.add_argument("--desc")
     if name in ("done", "fail"): sp.add_argument("--msg")
+    if name == "open": sp.add_argument("--window", action="store_true", help="separate terminal window even inside herdr")
 sub.add_parser("demo")
 a = p.parse_args()
 {"init": cmd_init, "set": cmd_set, "done": lambda a: finish(a, "done"), "fail": lambda a: finish(a, "failed"),

@@ -13,7 +13,11 @@ in its own terminal and keep it updated. Script: `~/.claude/skills/task-progress
 
 1. **Init** a state file in the scratchpad (not the project): `$PP init "$F" --title "Short name" --desc "One line on what and why"`
    (`F=<scratchpad>/progress-<task>.json`).
-2. **Open the viewer**: `$PP open "$F"` (launches a new terminal window: gnome-terminal, kitty, alacritty, konsole or xterm).
+2. **Open the viewer**: `$PP open "$F"`.
+   - Inside **Herdr** (`HC_TERMINAL_ID` set) it installs the bundled `herdr/` mod into `~/.config/herdr-app/mods/task-progress`
+     and opens it as a pane under your own, keeping focus on you. `TASK_PROGRESS_SPLIT=right` splits beside instead.
+     The user can close it with its × button; the task is unaffected.
+   - Elsewhere (or with `--window`) it launches a new terminal window: gnome-terminal, kitty, alacritty, konsole or xterm.
    If it prints that no GUI terminal was found, give the user the printed `watch` command to paste in their terminal (e.g. the VS Code one).
 3. **Update at every milestone**, cheaply and often (each call is instant):
    `$PP set "$F" --percent 40 --step "What is happening right now" --log "Notable event"`
