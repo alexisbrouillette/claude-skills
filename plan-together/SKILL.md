@@ -1,6 +1,6 @@
 ---
 name: plan-together
-description: Plan with the user before acting and work in small steps. Use at the start of EVERY request that involves doing work (editing or creating files, running commands, git/push, installing, launching agents or delegating, multi-step tasks), and again before each next chunk. The user can switch to autonomous mode ("run on your own", "I'm going to sleep"). Skip only for pure questions or tiny read-only lookups.
+description: Show a short plan and wait for approval before doing work; then work in small steps. Use before edits, state-changing commands, installs, pushes, delegation or multi-step tasks. Skip for pure questions.
 ---
 
 # Plan together, then go small

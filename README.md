@@ -11,6 +11,8 @@ Then pull to update. `synced/` is managed by claude.ai and is git-ignored.
 - `plan-together/` : show a short plan (steps, skills/agents, risks) and work in small steps with the user.
 - `herdr-usage/` : Herdr window showing Claude Code and Antigravity usage limits. Run `herdr-usage/install.sh`, then `herdr-app do mod.open '{"name":"usage"}'` (again closes it). For an always-visible sidebar version, add a block `{"type":"block","size":{"px":275},"content":{"mod":"usage","props":{"compact":true}}}` to a cloned layout.
 - `research-kb/` : cite real papers/blog posts, keep a verified knowledge base (`~/.research-kb`); long articles are read by Antigravity's cheap Flash model with quote-checked output. Browse it in Herdr: run `research-kb/install.sh`, then `herdr-app do mod.open '{"name":"knowledge"}'`.
+- `INDEX.md` : one-screen table of when to use which skill.
+- `efficiency/AGENTS.md` : always-on rules to keep usage low. Link it: `ln -sf ~/.claude/skills/efficiency/AGENTS.md ~/.pi/agent/AGENTS.md`.
 
 ## Maintenance
 Skills tell Claude to ask permission, fix any bug it hits (notably on Windows/macOS, where they are untested),

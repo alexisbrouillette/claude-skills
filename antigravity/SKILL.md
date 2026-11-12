@@ -1,6 +1,6 @@
 ---
 name: antigravity
-description: Delegate tasks to Google Antigravity's `agy` CLI as a second agent, choosing the model per task and ALWAYS checking quotas first. Use when the user says to ask/send/delegate to Antigravity or agy, wants a second opinion or parallel agent, or wants to offload work to Gemini, or Claude/GPT models served through Antigravity.
+description: Delegate bulk or parallel work (big reads, tests, reviews, isolated modules) to Antigravity's `agy` CLI, quota-checked first. Use when asked to delegate, for a second opinion, or to save Claude quota.
 ---
 
 # Antigravity delegation

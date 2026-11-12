@@ -1,6 +1,6 @@
 ---
 name: task-progress
-description: Show the user live progress of any long-running task in a separate terminal window (title, description, progress bar, elapsed/ETA, current step, recent log). Use EVERY time you start a task expected to take more than ~30 seconds or run in the background: builds, test suites, data pipelines, installs, migrations, large refactors, Antigravity/agent delegations. Also use when the user asks to see progress or to demo it.
+description: Live progress pane (Herdr) or terminal window for tasks over ~30 s: builds, tests, installs, migrations, long delegations. Also when the user asks to see progress.
 ---
 
 # Task progress viewer

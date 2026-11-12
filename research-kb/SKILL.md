@@ -1,6 +1,6 @@
 ---
 name: research-kb
-description: Ground research and technical-design work in real papers and blog posts, cite them, and keep a verified knowledge base the user can browse in Herdr. Use whenever work depends on factual claims from the literature (methods, benchmarks, algorithm choices, "what does the research say", model/library behaviour), when the user asks for sources, or when starting research/development on a new topic. Not for routine coding.
+description: Cite verified papers and blog posts, read articles through the cheap Flash model, and save sources to the Herdr knowledge base. Use when claims depend on literature or the user asks for sources; not for routine coding.
 ---
 
 # Research knowledge base
