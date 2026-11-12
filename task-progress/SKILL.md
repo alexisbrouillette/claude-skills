@@ -31,6 +31,17 @@ For a shell command running in the background, wrap the steps around it: init, o
 `run_in_background`, and update from its output while polling (use Monitor / periodic reads, not sleep loops).
 If the task has natural phases, split percent ranges across them (e.g. 0-25, 25-60, ...).
 
+## Slurm jobs on a remote machine
+`nohup python3 ~/.claude/skills/task-progress/scripts/slurm_watch.py --on fir --every 30 > /tmp/slurm_watch.log 2>&1 &`
+One card per job in the shared pane (state, elapsed of time limit, node, last log line). The bar appears only when the job log has a
+tqdm bar (`Ep 2/15: 40%|`), otherwise text only. Finished jobs turn into a done/failed card. One instance per machine (pid in /tmp);
+stop it with `pkill -f slurm_watch.py`. Each poll runs one `hc run --on <machine>` call (a short terminal there).
+
+## Any hc terminal (e.g. a long command on Fir)
+`nohup python3 ~/.claude/skills/task-progress/scripts/hc_watch.py fir/t18 --on fir --title "Short name" --probe '<remote snippet printing one status line>' > /tmp/hc_watch.log 2>&1 &`
+One card per `hc` terminal: running time plus the probe line; the card finishes when the terminal exits (exit 0 = done, else failed).
+No bar unless the probe line has `NN%`. Do not stop watchers with `pkill -f <pattern>` from a command that contains that pattern (it kills itself); use pids.
+
 ## Rules
 - Open the viewer once per task, before the work starts. Do not spawn a window for quick tasks.
 - Keep the chat itself brief while it runs; the viewer carries the detail.
