@@ -69,3 +69,14 @@ credentials, or content the user has marked private without asking first.
 
 - Quota error mid-run: re-run `quota`, switch to another pool/model, tell the user.
 - `agy not found` / auth error: tell the user to install or sign in (`agy` interactive once); don't try to work around it.
+
+## If this skill breaks (bug, crash, wrong platform)
+
+These scripts were written and tested on Linux only; Windows/macOS users may hit problems
+(`python3` vs `python`, bash missing, terminal launch, ANSI colors, paths).
+1. Stop, show the user the error, and explain the cause in one or two sentences.
+2. **Ask the user whether you may fix it.** Do not edit the skill files before they say yes.
+3. After the fix, re-run the failing step to confirm it works, and keep it working on Linux too.
+4. Then commit in `~/.claude/skills` (small message describing the fix) and push. Ask before pushing if
+   unsure the user has write access; if the push is rejected, offer to open a pull request
+   (`gh pr create`) or tell them to send the patch to the repo owner. Never force-push.
