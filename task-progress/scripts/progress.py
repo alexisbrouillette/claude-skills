@@ -16,13 +16,32 @@ def load(f):
     except Exception: return {}
 
 def save(f, d):
-    tmp = f + ".tmp"
+    tmp = f"{f}.{os.getpid()}.tmp"
     with open(tmp, "w") as fh: json.dump(d, fh)
     os.replace(tmp, f)
 
+# ---------- shared hub: one pane shows every task ----------
+HUB_DIR = os.path.expanduser("~/.cache/task-progress"); HUB = os.path.join(HUB_DIR, "hub.json"); KEEP_DONE = 120
+
+def hub_refresh(add=None):
+    """Merge all registered task files into hub.json (what the shared pane reads). Prunes finished/missing tasks."""
+    os.makedirs(HUB_DIR, exist_ok=True)
+    h = load(HUB); files = h.get("files", []); now = time.time()
+    if add and add not in files: files.append(add)
+    tasks, keep = [], []
+    for fp in files:
+        d = load(fp)
+        if not d: continue
+        if d.get("status") != "running" and d.get("end") and now - d["end"] > KEEP_DONE: continue
+        if d.get("status") == "running" and now - d.get("upd", d.get("start", now)) > 3600: continue
+        d["file"] = fp; tasks.append(d); keep.append(fp)
+    tasks.sort(key=lambda d: (d.get("status") != "running", -(d.get("start") or 0)))
+    h.update(files=keep, tasks=tasks, updated=now); save(HUB, h)
+
 def cmd_init(a):
     save(a.file, {"title": a.title, "desc": a.desc or "", "percent": None, "step": "Starting…",
-                  "log": [], "status": "running", "start": time.time(), "end": None, "msg": ""})
+                  "log": [], "status": "running", "start": time.time(), "end": None, "msg": "", "upd": time.time()})
+    hub_refresh(add=os.path.abspath(a.file))
 
 def cmd_set(a):
     d = load(a.file)
@@ -31,12 +50,12 @@ def cmd_set(a):
     if a.percent is not None: d["percent"] = max(0, min(100, a.percent))
     if a.step: d["step"] = a.step
     if a.log: d.setdefault("log", []).append([time.time(), a.log]); d["log"] = d["log"][-30:]
-    save(a.file, d)
+    d["upd"] = time.time(); save(a.file, d); hub_refresh()
 
 def finish(a, status):
     d = load(a.file); d["status"] = status; d["end"] = time.time(); d["msg"] = a.msg or ""
     if status == "done": d["percent"] = 100
-    save(a.file, d)
+    d["upd"] = time.time(); save(a.file, d); hub_refresh()
 
 # ---------- rendering ----------
 R = "\033[0m"; B = "\033[1m"; DIM = "\033[2m"
@@ -74,8 +93,8 @@ def render(d, t):
     L.append(f"{pad}{col}{B}{icon}  {clip(d.get('title','Task'), w-4)}{R}")
     if d.get("desc"): L.append(f"{pad}{DIM}{clip(d['desc'], w)}{R}")
     L.append("")
-    label = "…" if pct is None else f"{pct:>3.0f}%"
-    L.append(f"{pad}{bar(w - 6, pct, t, status)} {B}{label}{R}")
+    if pct is not None:   # bar only when a real percentage is known; otherwise text steps only
+        L.append(f"{pad}{bar(w - 6, pct, t, status)} {B}{pct:>3.0f}%{R}")
     meta = f"elapsed {fmt(el)}"
     if status == "running" and pct and pct >= 3: meta += f"  ·  ~{fmt(el * (100 - pct) / pct)} left"
     L.append(f"{pad}{DIM}{meta}{R}")
@@ -131,23 +150,29 @@ def install_mod():
         with open(out, "wb") as fh: fh.write(new)
 
 def open_in_herdr(f):
-    """Split the calling agent's pane with the task-progress mod. Returns False if not in herdr."""
+    """Show the task in the ONE shared task-progress pane (created on first use). False if not in herdr."""
     term = os.environ.get("HC_TERMINAL_ID")
     if not term or not shutil.which("herdr-app") or not os.path.isdir(MOD_SRC): return False
     try:
-        install_mod()
+        install_mod(); hub_refresh(add=f)
         ls = json.loads(subprocess.run(["herdr-app", "ls"], capture_output=True, text=True, timeout=15).stdout)
         pane = next((t["pane"] for s in ls["spaces"] for tab in s["tabs"] for t in tab["terminals"]
                      if t["terminal"] == term and t.get("pane")), None)
-        args = {"direction": os.environ.get("TASK_PROGRESS_SPLIT", "down"), "mod": "task-progress", "props": {"file": f}}
-        if pane: args["pane"] = pane
-        new = herdr_do("pane.split", args).get("pane")
-        if new:
-            d = load(f); d["pane"] = new; save(f, d)
+        hub_pane, alive = load(HUB).get("pane"), False
+        if hub_pane:   # focusing fails if the shared pane was closed
+            try: herdr_do("pane.focus", {"pane": hub_pane}); alive = True
+            except Exception: pass
+        if alive: print(f"added to shared herdr pane {hub_pane}")
+        else:
+            args = {"direction": os.environ.get("TASK_PROGRESS_SPLIT", "down"), "mod": "task-progress", "props": {"file": HUB}}
+            if pane: args["pane"] = pane
+            new = herdr_do("pane.split", args).get("pane")
+            h = load(HUB); h["pane"] = new; save(HUB, h)
+            print(f"opened shared herdr pane {new or '(new)'}")
         if pane:  # give the keyboard back to the agent's terminal
             try: herdr_do("pane.focus", {"pane": pane})
             except Exception: pass
-        print(f"opened in herdr pane {new or '(new)'}"); return True
+        return True
     except Exception as e:
         print(f"herdr pane failed ({e}); falling back to a terminal window", file=sys.stderr); return False
 

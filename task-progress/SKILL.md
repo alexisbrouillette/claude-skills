@@ -13,7 +13,7 @@ in its own terminal and keep it updated. Script: `~/.claude/skills/task-progress
 
 1. **Init** a state file in the scratchpad (not the project): `$PP init "$F" --title "Short name" --desc "One line on what and why"`
    (`F=<scratchpad>/progress-<task>.json`).
-2. **Open the viewer**: `$PP open "$F"`.
+2. **Open the viewer**: `$PP open "$F"`. All tasks share ONE pane (one card per task; finished cards disappear after ~2 min); `open` only creates the pane if it does not exist.
    - Inside **Herdr** (`HC_TERMINAL_ID` set) it installs the bundled `herdr/` mod into `~/.config/herdr-app/mods/task-progress`
      and opens it as a pane under your own, keeping focus on you. `TASK_PROGRESS_SPLIT=right` splits beside instead.
      The user can close it with its × button; the task is unaffected.
@@ -21,8 +21,8 @@ in its own terminal and keep it updated. Script: `~/.claude/skills/task-progress
    If it prints that no GUI terminal was found, give the user the printed `watch` command to paste in their terminal (e.g. the VS Code one).
 3. **Update at every milestone**, cheaply and often (each call is instant):
    `$PP set "$F" --percent 40 --step "What is happening right now" --log "Notable event"`
-   - `--percent` only when you genuinely know it (steps done / total, files processed / total). Omit it for an
-     indeterminate animated bar; never invent numbers. Update `--step` even when percent is unknown.
+   - `--percent` only when you genuinely know it (steps done / total, files processed / total). Omit it when unknown: no bar is shown, only the text step.
+     Never invent numbers. Update `--step` even when percent is unknown.
    - `--step` = present-tense plain language ("Running tests: 3 of 8 suites"). `--log` = short past-tense events.
 4. **Finish**: `$PP done "$F" --msg "Result in one line"` or `$PP fail "$F" --msg "What went wrong"`. Always call one of them, even on error.
    The viewer stays open until the user presses Ctrl-C.
