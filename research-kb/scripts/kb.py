@@ -103,7 +103,7 @@ def page_meta(url):
     date = meta("citation_publication_date", "article:published_time", "date", "citation_date") or ""
     y = re.search(r"(19|20)\d{2}", date)
     doi = meta("citation_doi") or (DOI.search(head).group(1).rstrip(".,;)") if re.search(r'citation_doi|doi\.org', head) and DOI.search(head) else None)
-    return {"title": clip(t, 300), "authors": [au] if au else [], "year": int(y.group(0)) if y else None, "url": final,
+    return {"title": clip(t, 300), "authors": [" ".join(reversed([x.strip() for x in au.split(",", 1)])) if au and "," in au else au] if au else [], "year": int(y.group(0)) if y else None, "url": final,
             "doi": doi if (doi and doi.startswith("10.")) else None}
 
 # ---------- commands ----------

@@ -9,7 +9,14 @@ Antigravity's CLI (`agy`) runs non-interactively with `-p`. This skill wraps it 
 `scripts/agy.sh` (path-resolves `agy` on any machine: PATH, `~/.gemini/bin/agy`, `~/.local/bin/agy`).
 Call it as `bash ~/.claude/skills/antigravity/scripts/agy.sh ...`.
 
-## When it is worth delegating
+## Reading big things (do this by default)
+
+Do not read big files, notebooks, logs or pages yourself (>~150 lines / 8 KB): use
+`python3 ~/.claude/skills/antigravity/scripts/agy_read.py PATH|- --ask "question"` (for URLs/papers: `research-kb/scripts/kb.py read URL --ask ...`).
+Flash reads it, the script re-checks every quote against the text, and you get ~600 tokens back instead of 8k+. Pipe remote output with `-`.
+This is cheap (free quota pool, one call) so the "do not delegate small tasks" rule below does NOT apply to reading.
+
+## When it is worth delegating (parallel work)
 
 Delegation costs quota, setup time and review effort, so use it only for real parallelism:
 - **Several independent pieces** to build at once (separate files/components/modules with no shared edits): keep one piece, hand others to agy.
